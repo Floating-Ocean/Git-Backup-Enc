@@ -265,22 +265,16 @@ def backup(config_path: str = "config.yaml"):
         # Get relative path from source directory
         rel_path = file_path.relative_to(source_dir)
         
-        # Encrypt directory structure and filename
-        parts = list(rel_path.parts)
-        encrypted_parts = [encryptor.encrypt_filename(part) for part in parts]
+        # Hash the entire relative path to create a single flat filename
+        # This prevents long path issues even for deeply nested directories
+        encrypted_filename = encryptor.encrypt_filename(str(rel_path))
+        encrypted_full_path = backup_path / encrypted_filename
         
-        # Create encrypted path
-        encrypted_rel_path = Path(*encrypted_parts)
-        encrypted_full_path = backup_path / encrypted_rel_path
-        
-        # Create encrypted directory structure
-        encrypted_full_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Encrypt and copy file
+        # Encrypt and copy file (no directory structure needed)
         encryptor.encrypt_file(str(file_path), str(encrypted_full_path))
         
         # Store mapping
-        mapping[str(encrypted_rel_path)] = str(rel_path)
+        mapping[encrypted_filename] = str(rel_path)
         
         print(f"  Encrypted: {rel_path}")
     

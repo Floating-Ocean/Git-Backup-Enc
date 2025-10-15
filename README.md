@@ -155,7 +155,7 @@ Add a line for daily backup at 2 AM:
 - 🔐 **Encryption**: The tool uses AES-256-CBC encryption with PBKDF2-HMAC-SHA256 key derivation (100,000 iterations), which is secure when used with a strong password.
 - 🌐 **Git Repository**: Make sure your git repository is private if it contains sensitive data.
 - 📝 **Mapping File**: The mapping between encrypted and original filenames is stored encrypted in the backup.
-- 📏 **Filename Hashing**: Filenames are hashed to fixed 64-character names using HMAC-SHA256, preventing issues with path length limits while maintaining security.
+- 📏 **Filename Hashing**: Each file's entire relative path is hashed to a single 64-character name using HMAC-SHA256, creating a flat backup structure with no path length issues.
 
 ## File Structure / 文件结构
 
@@ -177,10 +177,10 @@ Git-Backup-Enc/
 2. **Encryption**: 
    - Derives AES-256 key from password using PBKDF2-HMAC-SHA256 (100,000 iterations)
    - Encrypts each file content with AES-256-CBC
-   - Hashes each filename and folder name using HMAC-SHA256 (produces fixed 64-character names)
+   - Hashes entire relative path using HMAC-SHA256 to create a single 64-character filename
    - Generates random IV for each encryption operation
-3. **Storage**: Saves encrypted files in backup directory
-4. **Mapping**: Creates encrypted mapping file to track original filenames
+3. **Storage**: Saves encrypted files in a flat directory structure (no subdirectories)
+4. **Mapping**: Creates encrypted mapping file to track original filenames and paths
 5. **Git Sync**: Commits and pushes to remote repository
 
 ### Restore Process / 恢复过程
