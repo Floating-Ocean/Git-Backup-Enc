@@ -11,6 +11,7 @@ import pathspec
 import base64
 import json
 import shutil
+import hashlib
 from pathlib import Path
 from typing import List, Dict, Set
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -58,10 +59,13 @@ class BackupEncryptor:
         return iv + encrypted
     
     def encrypt_filename(self, filename: str) -> str:
-        """Encrypt filename and return base64url-encoded string"""
-        encrypted = self.encrypt_data(filename.encode('utf-8'))
-        # Use base64url encoding to make it filesystem-safe
-        return base64.urlsafe_b64encode(encrypted).decode('ascii').rstrip('=')
+        """Hash filename to create a short, deterministic encrypted name"""
+        # Use HMAC-SHA256 with the encryption key to create a deterministic hash
+        # This ensures the same filename always produces the same hash (needed for incremental backups)
+        # and the hash is cryptographically secure
+        import hmac
+        hash_obj = hmac.new(self.key, filename.encode('utf-8'), hashlib.sha256)
+        return hash_obj.hexdigest()
     
     def encrypt_file(self, input_path: str, output_path: str):
         """Encrypt file contents"""

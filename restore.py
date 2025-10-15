@@ -54,19 +54,6 @@ class BackupDecryptor:
         
         return data
     
-    def decrypt_filename(self, encrypted_filename: str) -> str:
-        """Decrypt base64url-encoded filename"""
-        # Add padding if needed
-        padding_needed = (4 - len(encrypted_filename) % 4) % 4
-        encrypted_filename += '=' * padding_needed
-        
-        # Decode from base64url
-        encrypted_data = base64.urlsafe_b64decode(encrypted_filename.encode('ascii'))
-        
-        # Decrypt
-        decrypted = self.decrypt_data(encrypted_data)
-        return decrypted.decode('utf-8')
-    
     def decrypt_file(self, input_path: str, output_path: str):
         """Decrypt file contents"""
         with open(input_path, 'rb') as f:
