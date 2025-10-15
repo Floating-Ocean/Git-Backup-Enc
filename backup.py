@@ -42,9 +42,14 @@ class BackupEncryptor:
         self.backend = default_backend()
     
     def encrypt_data(self, data: bytes) -> bytes:
-        """Encrypt data using AES-256-CBC"""
-        # Generate random IV
-        iv = os.urandom(16)
+        """Encrypt data using AES-256-CBC with deterministic IV"""
+        # Derive IV deterministically from content using HMAC
+        # This ensures same content always produces same encrypted output
+        # allowing git to efficiently handle unchanged files
+        import hmac
+        h = hmac.new(self.key, data, hashlib.sha256)
+        iv = h.digest()[:16]  # Take first 16 bytes as IV
+        
         cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv), backend=self.backend)
         encryptor = cipher.encryptor()
         
@@ -279,7 +284,8 @@ def backup(config_path: str = "config.yaml"):
         print(f"  Encrypted: {rel_path}")
     
     # Save mapping file (encrypted)
-    mapping_json = json.dumps(mapping, indent=2)
+    # Sort mapping to ensure deterministic output
+    mapping_json = json.dumps(mapping, indent=2, sort_keys=True)
     mapping_encrypted_path = backup_path / 'mapping.enc'
     with open(mapping_encrypted_path, 'wb') as f:
         f.write(encryptor.encrypt_data(mapping_json.encode('utf-8')))

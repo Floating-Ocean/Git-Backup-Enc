@@ -176,12 +176,13 @@ Git-Backup-Enc/
 1. **File Selection**: Uses pathspec (gitignore-style patterns) to match files
 2. **Encryption**: 
    - Derives AES-256 key from password using PBKDF2-HMAC-SHA256 (100,000 iterations)
-   - Encrypts each file content with AES-256-CBC
+   - Encrypts each file content with AES-256-CBC using deterministic IV (derived from content)
    - Hashes entire relative path using HMAC-SHA256 to create a single 64-character filename
-   - Generates random IV for each encryption operation
+   - Deterministic encryption ensures unchanged files produce identical output (efficient git)
 3. **Storage**: Saves encrypted files in a flat directory structure (no subdirectories)
-4. **Mapping**: Creates encrypted mapping file to track original filenames and paths
-5. **Git Sync**: Commits and pushes to remote repository
+4. **Cleanup**: Clears backup directory before saving to remove old/deleted files
+5. **Mapping**: Creates encrypted mapping file to track original filenames and paths
+6. **Git Sync**: Commits and pushes to remote repository (only changed files are uploaded)
 
 ### Restore Process / 恢复过程
 
