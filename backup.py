@@ -154,6 +154,19 @@ class GitBackup:
             # Repository already exists
             self.repo = Repo(self.backup_dir)
             print(f"Using existing repository at {self.backup_dir}")
+            
+            # Ensure we're on the correct branch
+            try:
+                if self.repo.active_branch.name != self.git_branch:
+                    # Try to checkout existing branch or create it
+                    try:
+                        self.repo.git.checkout(self.git_branch)
+                    except GitCommandError:
+                        # Branch doesn't exist, create it
+                        self.repo.git.checkout('-b', self.git_branch)
+            except:
+                # No active branch (empty repo), will be set on first commit
+                pass
         else:
             # Create directory if it doesn't exist
             self.backup_dir.mkdir(parents=True, exist_ok=True)
@@ -161,6 +174,13 @@ class GitBackup:
             # Initialize new repo
             self.repo = Repo.init(self.backup_dir)
             print(f"Initialized new repository at {self.backup_dir}")
+            
+            # Set initial branch name if possible
+            try:
+                self.repo.git.checkout('-b', self.git_branch)
+            except:
+                # Will be created on first commit
+                pass
             
             # Add remote if provided
             if self.git_repo:
@@ -175,24 +195,48 @@ class GitBackup:
         if not self.repo:
             raise RuntimeError("Repository not initialized")
         
+        # Check if there are changes BEFORE adding to staging
+        has_changes = (
+            self.repo.is_dirty(untracked_files=True) or 
+            len(self.repo.untracked_files) > 0
+        )
+        
+        if not has_changes:
+            print("No changes to commit")
+            return
+        
         # Add all files
         self.repo.git.add(A=True)
         
-        # Check if there are changes to commit
-        if self.repo.is_dirty() or self.repo.untracked_files:
-            self.repo.index.commit(commit_message)
-            print(f"Committed changes: {commit_message}")
-        else:
-            print("No changes to commit")
+        # Commit the changes
+        self.repo.index.commit(commit_message)
+        print(f"Committed changes: {commit_message}")
         
         # Push to remote if configured
         if self.git_repo:
             try:
                 origin = self.repo.remote('origin')
-                origin.push(self.git_branch)
-                print(f"Pushed to {self.git_repo}")
-            except GitCommandError as e:
-                print(f"Warning: Could not push to remote: {e}")
+                # Get the current branch name
+                try:
+                    current_branch = self.repo.active_branch.name
+                except:
+                    # Fallback if we can't get active branch
+                    current_branch = self.git_branch
+                
+                # Push using proper refspec, set upstream if needed
+                try:
+                    origin.push(refspec=f'{current_branch}:{self.git_branch}')
+                    print(f"Pushed to {self.git_repo}")
+                except GitCommandError as push_error:
+                    # Try with --set-upstream for first push
+                    try:
+                        origin.push(refspec=f'{current_branch}:{self.git_branch}', set_upstream=True)
+                        print(f"Pushed to {self.git_repo}")
+                    except GitCommandError as e:
+                        print(f"Warning: Could not push to remote: {e}")
+                        print("You may need to configure git credentials or push manually")
+            except Exception as e:
+                print(f"Warning: Error during push: {e}")
                 print("You may need to configure git credentials or push manually")
 
 
