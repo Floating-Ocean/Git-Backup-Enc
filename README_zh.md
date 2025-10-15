@@ -86,36 +86,62 @@ config.json     # 特定文件
 
 ### 3. 执行备份
 
+**手动备份**：
+
 运行备份脚本：
 
 ```bash
-python backup.py
+python3 backup.py
 ```
 
 或指定配置文件：
 
 ```bash
-python backup.py -c /path/to/config.yaml
+python3 backup.py -c /path/to/config.yaml
 ```
+
+**自动定时备份**：
+
+使用内置调度器进行跨平台自动备份：
+
+```bash
+# 默认 24 小时间隔
+python3 scheduler.py
+
+# 每 12 小时一次
+python3 scheduler.py --interval 12
+
+# 每 30 分钟一次
+python3 scheduler.py --interval 0.5
+
+# 使用自定义配置
+python3 scheduler.py -c /path/to/config.yaml --interval 6
+```
+
+调度器功能：
+- 启动时立即执行一次备份
+- 按指定间隔自动运行备份
+- 持续运行直到停止（Ctrl+C）
+- 跨平台支持（Windows、Linux、Mac）
 
 备份过程：
 1. 读取文件列表并查找匹配文件
 2. 使用 AES-256 加密文件内容、文件名和文件夹名
-3. 保存加密文件到备份目录
-4. 提交并推送到 Git 仓库
+3. 保存加密文件到 `content.enc/` 子目录
+4. 提交并推送到 Git 仓库（仅当有更改时）
 
 ### 4. 恢复备份
 
 运行恢复脚本：
 
 ```bash
-python restore.py
+python3 restore.py
 ```
 
 或指定恢复目录：
 
 ```bash
-python restore.py -d /path/to/restore/directory
+python3 restore.py -d /path/to/restore/directory
 ```
 
 恢复过程：
@@ -124,6 +150,41 @@ python restore.py -d /path/to/restore/directory
 3. 恢复文件到指定目录
 
 ## 定时备份
+
+### 推荐方式：使用内置调度器（跨平台）
+
+使用自动调度器是最简单的方式：
+
+```bash
+# 使用默认 24 小时间隔
+python3 scheduler.py
+
+# 每 6 小时一次
+python3 scheduler.py --interval 6
+
+# 每 30 分钟一次
+python3 scheduler.py --interval 0.5
+```
+
+调度器可以运行为：
+- **Windows**：后台服务或启动任务
+- **Linux/Mac**：后台进程或 systemd 服务
+
+在后台运行调度器：
+
+**Linux/Mac**：
+```bash
+nohup python3 scheduler.py --interval 24 > scheduler.log 2>&1 &
+```
+
+**Windows**（PowerShell）：
+```powershell
+Start-Process python3 -ArgumentList "scheduler.py --interval 24" -WindowStyle Hidden
+```
+
+### 备选方案：系统调度器
+
+如果你更喜欢使用系统调度器：
 
 ### Linux/Mac（使用 cron）
 
@@ -162,7 +223,7 @@ crontab -e
    - 使用 AES-256-CBC 加密每个文件内容（使用从内容派生的确定性 IV）
    - 使用 HMAC-SHA256 对整个相对路径进行哈希，生成单一的 64 字符文件名
    - 确定性加密确保未更改的文件产生相同的输出（高效的 git 操作）
-3. **存储**：将加密文件保存在扁平目录结构中（无子目录）
+3. **存储**：将加密文件保存在 `content.enc/` 子目录中（有组织的结构）
 4. **清理**：保存前清空备份目录以删除旧文件/已删除的文件
 5. **映射**：创建加密的映射文件以跟踪原始文件名和路径
 6. **Git 同步**：提交并推送到远程仓库（仅上传更改的文件）

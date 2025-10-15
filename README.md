@@ -89,30 +89,56 @@ config.json     # specific file
 
 ### 3. Backup / 备份
 
+**Manual Backup**:
+
 Run the backup script:
 
 ```bash
-python backup.py
+python3 backup.py
 ```
 
 Or with a custom config file:
 
 ```bash
-python backup.py -c /path/to/config.yaml
+python3 backup.py -c /path/to/config.yaml
 ```
 
-The script will:
+**Automatic Scheduled Backups**:
+
+For cross-platform automatic backups, use the scheduler:
+
+```bash
+# Run with default 24-hour interval
+python3 scheduler.py
+
+# Run every 12 hours
+python3 scheduler.py --interval 12
+
+# Run every 30 minutes
+python3 scheduler.py --interval 0.5
+
+# With custom config
+python3 scheduler.py -c /path/to/config.yaml --interval 6
+```
+
+The scheduler will:
+- Run an immediate backup when started
+- Automatically run backups at the specified interval
+- Continue running until stopped (Ctrl+C)
+- Work cross-platform (Windows, Linux, Mac)
+
+The backup process:
 1. Read the file list and find matching files
 2. Encrypt file contents, filenames, and folder names using AES-256
-3. Save encrypted files to the backup directory
-4. Commit and push to the configured git repository
+3. Save encrypted files to `content.enc/` subdirectory
+4. Commit and push to the configured git repository (only if there are changes)
 
 ### 4. Restore / 恢复
 
 Run the restore script:
 
 ```bash
-python restore.py
+python3 restore.py
 ```
 
 Or with a custom restore directory:
@@ -127,6 +153,41 @@ The script will:
 3. Restore files to the specified directory
 
 ## Scheduling / 定时任务
+
+### Recommended: Use Built-in Scheduler (Cross-platform)
+
+The easiest way to schedule automatic backups is to use the included scheduler script:
+
+```bash
+# Run scheduler with default 24-hour interval
+python3 scheduler.py
+
+# Run every 6 hours
+python3 scheduler.py --interval 6
+
+# Run every 30 minutes
+python3 scheduler.py --interval 0.5
+```
+
+The scheduler can run as:
+- **Windows**: Background service or startup task
+- **Linux/Mac**: Background process or systemd service
+
+To run the scheduler in the background:
+
+**Linux/Mac**:
+```bash
+nohup python3 scheduler.py --interval 24 > scheduler.log 2>&1 &
+```
+
+**Windows** (PowerShell):
+```powershell
+Start-Process python3 -ArgumentList "scheduler.py --interval 24" -WindowStyle Hidden
+```
+
+### Alternative: System Schedulers
+
+If you prefer using system schedulers instead:
 
 ### Linux/Mac (using cron)
 
@@ -161,12 +222,22 @@ Add a line for daily backup at 2 AM:
 
 ```
 Git-Backup-Enc/
-├── backup.py              # Backup script
+├── backup.py              # Manual backup script
 ├── restore.py             # Restore script
+├── scheduler.py           # Automatic backup scheduler (NEW)
 ├── config.yaml            # Configuration file
 ├── backup_files.txt       # File list for backup
 ├── requirements.txt       # Python dependencies
 └── README.md             # This file
+
+Backup Repository Structure:
+backup_encrypted/
+├── .git/                  # Git repository
+├── content.enc/           # Encrypted files (NEW)
+│   ├── abc123...def       # Encrypted file 1
+│   ├── 456789...ghi       # Encrypted file 2
+│   └── xyz789...123       # Encrypted file 3
+└── mapping.enc            # Encrypted filename mapping
 ```
 
 ## How It Works / 工作原理
@@ -179,7 +250,7 @@ Git-Backup-Enc/
    - Encrypts each file content with AES-256-CBC using deterministic IV (derived from content)
    - Hashes entire relative path using HMAC-SHA256 to create a single 64-character filename
    - Deterministic encryption ensures unchanged files produce identical output (efficient git)
-3. **Storage**: Saves encrypted files in a flat directory structure (no subdirectories)
+3. **Storage**: Saves encrypted files in `content.enc/` subdirectory (organized structure)
 4. **Cleanup**: Clears backup directory before saving to remove old/deleted files
 5. **Mapping**: Creates encrypted mapping file to track original filenames and paths
 6. **Git Sync**: Commits and pushes to remote repository (only changed files are uploaded)

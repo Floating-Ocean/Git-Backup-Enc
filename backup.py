@@ -306,6 +306,10 @@ def backup(config_path: str = "config.yaml"):
             else:
                 item.unlink()
     
+    # Create content.enc subdirectory for encrypted files
+    content_dir = backup_path / 'content.enc'
+    content_dir.mkdir(exist_ok=True)
+    
     # Process each file
     print("\nEncrypting and copying files...")
     source_dir = Path(config.get('source_dir', './')).resolve()
@@ -317,9 +321,9 @@ def backup(config_path: str = "config.yaml"):
         # Hash the entire relative path to create a single flat filename
         # This prevents long path issues even for deeply nested directories
         encrypted_filename = encryptor.encrypt_filename(str(rel_path))
-        encrypted_full_path = backup_path / encrypted_filename
+        encrypted_full_path = content_dir / encrypted_filename
         
-        # Encrypt and copy file (no directory structure needed)
+        # Encrypt and copy file (stored in content.enc subdirectory)
         encryptor.encrypt_file(str(file_path), str(encrypted_full_path))
         
         # Store mapping
