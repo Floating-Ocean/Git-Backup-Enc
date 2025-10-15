@@ -1,0 +1,26 @@
+# Configuration file for Git-Backup-Enc (Example)
+
+# Path to the file containing list of files to backup
+# Syntax is based on .gitignore but for inclusion
+file_list: backup_files.txt
+
+# Directory where encrypted backup will be stored
+backup_dir: ./backup_encrypted
+
+# Git repository URL for backup
+git_repo: https://github.com/yourusername/your-backup-repo.git
+
+# Branch name for backup
+git_branch: main
+
+# Encryption password (IMPORTANT: Keep this secure!)
+# In production, use environment variables or secure key management
+# Example: export BACKUP_PASSWORD="your-secure-password"
+# Leave empty to read from environment variable BACKUP_PASSWORD
+password: 
+
+# Source directory (where your files to backup are located)
+source_dir: ./
+
+# Restore directory (where files will be restored to)
+restore_dir: ./restored

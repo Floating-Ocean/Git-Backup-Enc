@@ -1,0 +1,13 @@
+# List of files and directories to backup
+# Syntax similar to .gitignore but for inclusion
+# Lines starting with # are comments
+# Each line is a pattern to match files/directories
+
+# Example patterns:
+# *.txt           - all .txt files
+# docs/           - entire docs directory
+# config.json     - specific file
+# *.log           - all log files
+# **/*.py         - all Python files in any subdirectory
+
+# Add your patterns below:
