@@ -152,7 +152,7 @@ Add a line for daily backup at 2 AM:
 ## Security Considerations / 安全注意事项
 
 - 🔑 **Password Security**: Never commit your password to git. Use environment variables or secure key management.
-- 🔐 **Encryption**: The tool uses AES-256-CBC encryption, which is secure when used with a strong password.
+- 🔐 **Encryption**: The tool uses AES-256-CBC encryption with PBKDF2-HMAC-SHA256 key derivation (100,000 iterations), which is secure when used with a strong password.
 - 🌐 **Git Repository**: Make sure your git repository is private if it contains sensitive data.
 - 📝 **Mapping File**: The mapping between encrypted and original filenames is stored encrypted in the backup.
 
@@ -174,7 +174,7 @@ Git-Backup-Enc/
 
 1. **File Selection**: Uses pathspec (gitignore-style patterns) to match files
 2. **Encryption**: 
-   - Derives AES-256 key from password using SHA-256
+   - Derives AES-256 key from password using PBKDF2-HMAC-SHA256 (100,000 iterations)
    - Encrypts each file content with AES-256-CBC
    - Encrypts each filename and folder name separately
    - Generates random IV for each encryption operation

@@ -7,14 +7,14 @@ Clones repository, decrypts files/filenames/folders, and restores to original lo
 import os
 import sys
 import yaml
-import hashlib
 import base64
 import json
 import shutil
 from pathlib import Path
 from typing import Dict
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives import padding, hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 from git import Repo, GitCommandError
 
@@ -24,8 +24,17 @@ class BackupDecryptor:
     
     def __init__(self, password: str):
         """Initialize with password"""
-        # Derive a 32-byte key from password using SHA256
-        self.key = hashlib.sha256(password.encode()).digest()
+        # Use PBKDF2 to derive a 32-byte key from password
+        # Must use same salt as BackupEncryptor for compatibility
+        salt = b'Git-Backup-Enc-Salt-v1'  # Fixed salt for backward compatibility
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        self.key = kdf.derive(password.encode())
         self.backend = default_backend()
     
     def decrypt_data(self, encrypted_data: bytes) -> bytes:

@@ -8,14 +8,14 @@ import os
 import sys
 import yaml
 import pathspec
-import hashlib
 import base64
 import json
 import shutil
 from pathlib import Path
 from typing import List, Dict, Set
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives import padding, hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 from git import Repo, GitCommandError
 
@@ -25,8 +25,19 @@ class BackupEncryptor:
     
     def __init__(self, password: str):
         """Initialize with password"""
-        # Derive a 32-byte key from password using SHA256
-        self.key = hashlib.sha256(password.encode()).digest()
+        # Use PBKDF2 to derive a 32-byte key from password
+        # Using a fixed salt for deterministic key derivation
+        # (so same password always produces same key for restore compatibility)
+        # In production, consider using a per-backup random salt stored with backup
+        salt = b'Git-Backup-Enc-Salt-v1'  # Fixed salt for backward compatibility
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        self.key = kdf.derive(password.encode())
         self.backend = default_backend()
     
     def encrypt_data(self, data: bytes) -> bytes:
