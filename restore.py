@@ -187,18 +187,11 @@ def restore(config_path: str = "config.yaml", restore_dir: str = None):
     print("\nDecrypting and restoring files...")
     restored_count = 0
     
-    # Check if files are in content.enc subdirectory (new format) or root (old format)
+    # All encrypted files are stored in content.enc subdirectory
     content_dir = backup_path / 'content.enc'
-    use_content_dir = content_dir.exists()
     
     for encrypted_rel_path, original_rel_path in mapping.items():
-        # Try new format first (content.enc subdirectory)
-        if use_content_dir:
-            encrypted_full_path = content_dir / encrypted_rel_path
-        else:
-            # Fallback to old format (root directory)
-            encrypted_full_path = backup_path / encrypted_rel_path
-        
+        encrypted_full_path = content_dir / encrypted_rel_path
         restore_full_path = restore_path / original_rel_path
         
         if not encrypted_full_path.exists():
