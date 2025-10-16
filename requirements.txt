@@ -1,0 +1,4 @@
+cryptography>=41.0.0
+pathspec>=0.11.0
+gitpython>=3.1.40
+pyyaml>=6.0
