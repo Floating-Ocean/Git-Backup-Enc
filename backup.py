@@ -184,23 +184,42 @@ class GitBackup:
             # Create directory if it doesn't exist
             self.backup_dir.mkdir(parents=True, exist_ok=True)
             
-            # Initialize new repo
-            self.repo = Repo.init(self.backup_dir)
-            print(f"Initialized new repository at {self.backup_dir}")
-            
-            # Set initial branch name if possible
-            try:
-                self.repo.git.checkout('-b', self.git_branch)
-            except:
-                # Will be created on first commit
-                pass
-            
-            # Add remote if provided
+            # If remote is configured, try to clone instead of init
             if self.git_repo:
                 try:
-                    self.repo.create_remote('origin', self.git_repo)
-                except GitCommandError:
-                    # Remote might already exist
+                    print(f"Cloning repository from {self.git_repo}...")
+                    self.repo = Repo.clone_from(
+                        self.git_repo,
+                        self.backup_dir,
+                        branch=self.git_branch
+                    )
+                    print(f"Cloned repository to {self.backup_dir}")
+                except GitCommandError as e:
+                    # Remote might be empty or inaccessible, initialize new repo
+                    print(f"Could not clone (remote may be empty): {e}")
+                    print(f"Initializing new repository at {self.backup_dir}")
+                    self.repo = Repo.init(self.backup_dir)
+                    
+                    # Set initial branch name
+                    try:
+                        self.repo.git.checkout('-b', self.git_branch)
+                    except:
+                        pass
+                    
+                    # Add remote
+                    try:
+                        self.repo.create_remote('origin', self.git_repo)
+                    except GitCommandError:
+                        pass
+            else:
+                # No remote configured, just initialize
+                self.repo = Repo.init(self.backup_dir)
+                print(f"Initialized new repository at {self.backup_dir}")
+                
+                # Set initial branch name
+                try:
+                    self.repo.git.checkout('-b', self.git_branch)
+                except:
                     pass
     
     def commit_and_push(self, commit_message: str = "Backup update"):
