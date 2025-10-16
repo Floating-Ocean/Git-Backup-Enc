@@ -3,6 +3,10 @@ A tool to upload data via git regularly, with simple encryptions.
 
 基于 Git 的定时备份工具，支持 AES 加密文件内容、文件名和文件夹名。
 
+Code built using vibe coding (ai), use at your own risk.
+
+代码使用 AI 编写，自测可用但不保证可用性。
+
 ## Features / 功能特点
 
 - 📁 File list-based backup (支持基于文件列表的备份)
