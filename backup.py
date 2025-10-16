@@ -155,6 +155,19 @@ class GitBackup:
             self.repo = Repo(self.backup_dir)
             print(f"Using existing repository at {self.backup_dir}")
             
+            # Pull latest changes from remote if configured
+            if self.git_repo:
+                try:
+                    origin = self.repo.remote('origin')
+                    print(f"Pulling latest changes from remote...")
+                    origin.pull(self.git_branch)
+                except GitCommandError as e:
+                    print(f"Warning: Could not pull from remote: {e}")
+                    print("Continuing with local changes...")
+                except Exception as e:
+                    print(f"Warning: Error during pull: {e}")
+                    print("Continuing with local changes...")
+            
             # Ensure we're on the correct branch
             try:
                 if self.repo.active_branch.name != self.git_branch:
